@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  common-ai:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: common-ai:latest
+    container_name: common-ai
+    ports:
+      - "20001:20001"
+    environment:
+      # 配置环境，可选值: local, dev, sit, prd，默认 local
+      - APP_ENV=${APP_ENV:-local}
+      # 固定使用 GPU2（A800）- 容器级别控制
+      - NVIDIA_VISIBLE_DEVICES=2
+      # 应用级别也设置，确保使用 GPU2
+      - CUDA_VISIBLE_DEVICES=2
+    volumes:
+      # 挂载日志目录（可选，方便查看日志）
+      - ./logs:/home/appuser/app/logs
+      # 挂载临时文件目录（可选，方便调试）
+      - ./tmp:/home/appuser/app/tmp
+    # GPU 支持：指定使用 GPU2（A800）
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+    networks:
+      - common-ai-network
+
+networks:
+  common-ai-network:
+    driver: bridge
+
